@@ -137,21 +137,6 @@ export default function Dashboard() {
   const [isTimerSaving, setIsTimerSaving] = useState(false);
 
   // --------------------------------------------------
-  // LOGIN / STUDENT
-  // --------------------------------------------------
-
-  useEffect(() => {
-    const savedStudent = localStorage.getItem("student");
-
-    if (!savedStudent) {
-      router.push("/login");
-      return;
-    }
-
-    setStudentName(savedStudent);
-  }, [router]);
-
-  // --------------------------------------------------
   // LIVE CLOCK
   // --------------------------------------------------
 
@@ -188,6 +173,8 @@ export default function Dashboard() {
   // --------------------------------------------------
 
   const fetchSessions = async () => {
+    if (!studentName) return;
+
     setIsLoading(true);
 
     try {
@@ -211,6 +198,17 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const storedStudent = localStorage.getItem("student");
+
+    if (!storedStudent) {
+      router.replace("/login");
+      return;
+    }
+
+    setStudentName(storedStudent);
+  }, [router]);
 
   useEffect(() => {
     if (studentName) {
@@ -464,6 +462,40 @@ export default function Dashboard() {
     return {
       finished: false,
       days,
+      hours,
+      minutes,
+      seconds,
+    };
+  }, [currentTime]);
+
+  // --------------------------------------------------
+  // TIME LEFT IN TODAY
+  // --------------------------------------------------
+
+  const dayEndCountdown = useMemo(() => {
+    const nextMidnight = new Date(currentTime);
+    nextMidnight.setHours(24, 0, 0, 0);
+
+    const difference = Math.max(
+      0,
+      nextMidnight.getTime() - currentTime.getTime()
+    );
+
+    const totalSeconds = Math.floor(
+      difference / 1000
+    );
+
+    const hours = Math.floor(
+      totalSeconds / 3600
+    );
+
+    const minutes = Math.floor(
+      (totalSeconds % 3600) / 60
+    );
+
+    const seconds = totalSeconds % 60;
+
+    return {
       hours,
       minutes,
       seconds,
@@ -808,6 +840,25 @@ export default function Dashboard() {
           <p className="text-right text-xs text-zinc-500 font-bold">
             {progressPercent}%
           </p>
+
+          <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
+            <div>
+              <p className="text-zinc-500 text-xs uppercase">
+                Day Ends In
+              </p>
+              <p className="text-zinc-300 text-xs mt-1">
+                Resets at 12:00 AM
+              </p>
+            </div>
+
+            <p className="text-yellow-400 font-bold text-lg tabular-nums">
+              {String(dayEndCountdown.hours).padStart(2, "0")}:{String(
+                dayEndCountdown.minutes
+              ).padStart(2, "0")}:{String(
+                dayEndCountdown.seconds
+              ).padStart(2, "0")}
+            </p>
+          </div>
 
         </div>
 
