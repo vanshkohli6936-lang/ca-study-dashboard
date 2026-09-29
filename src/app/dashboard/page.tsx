@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../../supabase";
 
 type Subject = {
@@ -112,7 +113,8 @@ function isSameDay(date1: Date, date2: Date) {
 }
 
 export default function Dashboard() {
-  const studentName = "Gaurav";
+  const router = useRouter();
+  const [studentName, setStudentName] = useState("");
 
   const [showModal, setShowModal] = useState(false);
 
@@ -133,6 +135,21 @@ export default function Dashboard() {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
   const [isTimerSaving, setIsTimerSaving] = useState(false);
+
+  // --------------------------------------------------
+  // LOGIN / STUDENT
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const savedStudent = localStorage.getItem("student");
+
+    if (!savedStudent) {
+      router.push("/login");
+      return;
+    }
+
+    setStudentName(savedStudent);
+  }, [router]);
 
   // --------------------------------------------------
   // LIVE CLOCK
@@ -177,6 +194,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("study_sessions")
         .select("*")
+        .eq("student", studentName)
         .order("start_time", { ascending: false });
 
       if (error) {
@@ -195,8 +213,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (studentName) {
+      fetchSessions();
+    }
+  }, [studentName]);
 
   // --------------------------------------------------
   // TODAY
@@ -488,6 +508,7 @@ export default function Dashboard() {
               duration_minutes:
                 durationMinutes,
               notes: topic.trim(),
+              student: studentName,
               start_time:
                 new Date().toISOString(),
             },
@@ -591,6 +612,8 @@ export default function Dashboard() {
 
               notes:
                 "Live timer study session",
+
+              student: studentName,
 
               start_time:
                 timerStartTime.toISOString(),
